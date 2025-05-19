@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Tarefas e Disciplinas</title>
+</head>
+<body>
+    <h1>Minhas Tarefas</h1>
+
+    <input type="text" id="tarefaInput" placeholder="Digite a tarefa" />
+    <button onclick="adicionarTarefa()">Adicionar</button>
+
+    <ul id="listaTarefas"></ul>
+
+    <h1>Minhas Disciplinas</h1>
+    <ul id="listaDisciplinas"></ul>
+
+    <p>
+        <a href="cadastro.html">Ir para Cadastro de Tarefas</a> |
+        <a href="disciplina.html">Ir para Cadastro de Disciplinas</a>
+    </p>
+
+    <script>
+        const tarefaInput = document.getElementById("tarefaInput");
+        const listaTarefas = document.getElementById("listaTarefas");
+        const listaDisciplinas = document.getElementById("listaDisciplinas");
+
+        async function carregarTarefas() {
+            try {
+                const resposta = await fetch("http://localhost:8000/tarefas");
+                const tarefas = await resposta.json();
+
+                listaTarefas.innerHTML = '';
+                tarefas.forEach(t => {
+                    const li = document.createElement("li");
+                    li.textContent = `Descrição: ${t.descricao}, Prazo: ${t.prazo}, Disciplina: ${t.disciplina}`;
+                    listaTarefas.appendChild(li);
+                });
+            } catch (erro) {
+                console.error("Erro ao carregar tarefas:", erro);
+            }
+        }
+
+        async function carregarDisciplinas() {
+            try {
+                const resposta = await fetch("http://localhost:8000/disciplinas");
+                const disciplinas = await resposta.json();
+
+                listaDisciplinas.innerHTML = '';
+                disciplinas.forEach(d => {
+                    const li = document.createElement("li");
+                    li.textContent = `Matéria: ${d.materia}, Professor: ${d.professor}, Curso: ${d.curso}`;
+                    listaDisciplinas.appendChild(li);
+                });
+            } catch (erro) {
+                console.error("Erro ao carregar disciplinas:", erro);
+            }
+        }
+
+        async function adicionarTarefa() {
+            const descricao = tarefaInput.value.trim();
+            if (descricao !== "") {
+                try {
+                    const resposta = await fetch("http://localhost:8000/tarefas", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ descricao, prazo: "2025-12-31", disciplina: "Sem Disciplina" })
+                    });
+
+                    if (resposta.status === 201) {
+                        tarefaInput.value = "";
+                        carregarTarefas();
+                    } else {
+                        const erro = await resposta.json();
+                        alert(erro.mensagem);
+                    }
+                } catch (erro) {
+                    alert("Erro ao adicionar tarefa.");
+                }
+            }
+        }
+
+        // Carrega os dados ao abrir a página
+        carregarTarefas();
+        carregarDisciplinas();
+    </script>
+</body>
+</html>

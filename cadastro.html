@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Tarefa</title>
+</head>
+<body>
+    <h1>Cadastro de Tarefa</h1>
+
+    <form id="formCadastro">
+        <label for="descricao">Descrição:</label>
+        <input type="text" id="descricao" required><br><br>
+
+        <label for="prazo">Prazo:</label>
+        <input type="date" id="prazo" required><br><br>
+
+        <label for="disciplina">Disciplina:</label>
+        <input type="text" id="disciplina" required><br><br>
+
+        <button type="submit">Cadastrar</button>
+    </form>
+
+    <h2>Lista de Tarefas</h2>
+    <ul id="listaTarefas"></ul>
+
+    <script>
+        const form = document.getElementById("formCadastro");
+        const lista = document.getElementById("listaTarefas");
+
+        async function carregarTarefas() {
+            try {
+                const resposta = await fetch("http://localhost:8000/tarefas");
+                const dados = await resposta.json();
+
+                lista.innerHTML = '';
+                dados.forEach(tarefa => {
+                    const li = document.createElement("li");
+                    li.textContent = `Descrição: ${tarefa.descricao}, Prazo: ${tarefa.prazo}, Disciplina: ${tarefa.disciplina}`;
+                    lista.appendChild(li);
+                });
+            } catch (erro) {
+                console.error("Erro ao carregar tarefas:", erro);
+            }
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const descricao = document.getElementById("descricao").value;
+            const prazo = document.getElementById("prazo").value;
+            const disciplina = document.getElementById("disciplina").value;
+
+            const novaTarefa = { descricao, prazo, disciplina };
+
+            try {
+                const resposta = await fetch("http://localhost:8000/tarefas", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(novaTarefa)
+                });
+
+                if (resposta.status === 201) {
+                    alert("Tarefa cadastrada com sucesso!");
+                    form.reset();
+                    carregarTarefas();
+                } else if (resposta.status === 400) {
+                    const dados = await resposta.json();
+                    alert(`Erro: ${dados.mensagem}`);
+                } else {
+                    alert("Erro desconhecido ao cadastrar tarefa.");
+                }
+            } catch (erro) {
+                alert("Erro: Não foi possível conectar com o servidor. Você iniciou o backend com `npm run dev`?");
+            }
+        });
+
+        // Carrega tarefas ao abrir a página
+        carregarTarefas();
+    </script>
+</body>
+</html>
