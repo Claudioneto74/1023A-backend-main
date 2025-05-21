@@ -2,21 +2,17 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Cadastrar Tarefa</title>
+    <title>Cadastro de Tarefas</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <h1>Cadastro de Tarefa</h1>
+    <h1>Cadastro de Tarefas</h1>
 
-    <form id="formCadastro">
-        <label for="descricao">Descrição:</label>
-        <input type="text" id="descricao" required><br><br>
-
-        <label for="prazo">Prazo:</label>
-        <input type="date" id="prazo" required><br><br>
-
-        <label for="disciplina">Disciplina:</label>
-        <input type="text" id="disciplina" required><br><br>
-
+    <form id="formTarefa">
+        <input type="text" id="descricao" placeholder="Descrição da tarefa" required>
+        <input type="text" id="prazoInicial" placeholder="Prazo inicial (ex: 20/05)" required>
+        <input type="text" id="prazoFinal" placeholder="Prazo final (ex: 25/05)" required>
         <button type="submit">Cadastrar</button>
     </form>
 
@@ -24,59 +20,62 @@
     <ul id="listaTarefas"></ul>
 
     <script>
-        const form = document.getElementById("formCadastro");
+        const form = document.getElementById("formTarefa");
         const lista = document.getElementById("listaTarefas");
 
         async function carregarTarefas() {
             try {
                 const resposta = await fetch("http://localhost:8000/tarefas");
-                const dados = await resposta.json();
-
-                lista.innerHTML = '';
-                dados.forEach(tarefa => {
+                if (!resposta.ok) {
+                    throw new Error("Erro ao carregar tarefas");
+                }
+                const tarefas = await resposta.json();
+                lista.innerHTML = "";
+                tarefas.forEach(tarefa => {
                     const li = document.createElement("li");
-                    li.textContent = `Descrição: ${tarefa.descricao}, Prazo: ${tarefa.prazo}, Disciplina: ${tarefa.disciplina}`;
+                    li.textContent = `Descrição: ${tarefa.descricao}, Início: ${tarefa.prazoInicial ?? 'não definido'}, Fim: ${tarefa.prazoFinal ?? 'não definido'}`;
                     lista.appendChild(li);
                 });
             } catch (erro) {
-                console.error("Erro ao carregar tarefas:", erro);
+                console.error("Erro ao buscar tarefas:", erro);
             }
         }
 
-        form.addEventListener("submit", async (event) => {
+        form.onsubmit = async (event) => {
             event.preventDefault();
 
-            const descricao = document.getElementById("descricao").value;
-            const prazo = document.getElementById("prazo").value;
-            const disciplina = document.getElementById("disciplina").value;
+            const descricao = document.getElementById("descricao").value.trim();
+            const prazoInicial = document.getElementById("prazoInicial").value;
+            const prazoFinal = document.getElementById("prazoFinal").value;
 
-            const novaTarefa = { descricao, prazo, disciplina };
+            if (!descricao) {
+                alert("A descrição é obrigatória!");
+                return;
+            }
 
             try {
                 const resposta = await fetch("http://localhost:8000/tarefas", {
                     method: "POST",
                     headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "application/json"
                     },
-                    body: JSON.stringify(novaTarefa)
+                    body: JSON.stringify({ descricao, prazoInicial, prazoFinal })
                 });
 
                 if (resposta.status === 201) {
                     alert("Tarefa cadastrada com sucesso!");
                     form.reset();
                     carregarTarefas();
-                } else if (resposta.status === 400) {
-                    const dados = await resposta.json();
-                    alert(`Erro: ${dados.mensagem}`);
                 } else {
-                    alert("Erro desconhecido ao cadastrar tarefa.");
+                    const erro = await resposta.json();
+                    alert(erro.mensagem || "Erro ao cadastrar a tarefa.");
                 }
             } catch (erro) {
-                alert("Erro: Não foi possível conectar com o servidor. Você iniciou o backend com `npm run dev`?");
+                alert("Erro na conexão com o servidor.");
+                console.error(erro);
             }
-        });
+        };
 
-        // Carrega tarefas ao abrir a página
         carregarTarefas();
     </script>
 </body>
